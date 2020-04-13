@@ -1,21 +1,29 @@
 <template>
   <div id="home">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
-
-    <scroll class="content" ref="scroll"
+<!--ref设定之后就可以利用 this.$refs.组件名字 来访问组件-->
+    <tab-control ref="tabControl1"
+                 :titles="['流行' , '新款' , '精选']"
+                 @tabClick="tabClick"
+                 class="tab-contrl"
+                 v-show="isTabFixed"
+    />
+    <scroll class="content"
+            ref="scroll"
             :probe-type="3"
             :pull-up-load="true"
             @scroll="contentScroll"
             @pullingUp="loadMore"
     >
-      <home-swiper :banners="banners"/>
+      <home-swiper @swiperImageLoad="swiperImageLoad"
+                   :banners="banners"/>
       <recommend-view :recommends="recommends"/>
       <feature-view/>
-      <tab-control class="tab-contrl"
+      <tab-control ref="tabControl2"
                    :titles="['流行' , '新款' , '精选']"
                    @tabClick="tabClick"
       />
-      <goods-list :goods="goods[currentType].list"/>
+      <goods-list :goods="showGoods"/>
     </scroll>
 <!--要监听组件的活动要加.native修饰符号-->
     <back-top @click.native="backClick" v-show="isShowBackTop"/>
@@ -41,8 +49,11 @@
 
 //导入的函数数据以及方法
   import { getHomeMultidata, getHomeGoods} from "network/home";
+  import {debounce} from "components/utils";
 
-  export default {
+
+
+export default {
     name: "Home",
     components:{
       HomeSwiper,
@@ -67,15 +78,39 @@
         },
         currentType: 'pop',
         isShowBackTop: false,
+        tabOffsetTop: 0,
+        isTabFixed: false,
+        saveY: 0
       }
     },
-    created() {
+    computed: {
+      showGoods() {
+        return this.goods[this.currentType].list
+      }
+    },
+  activated() {
+    this.$refs.scroll.scrollTo(0, this.saveY ,1)
+    this.$refs.scroll.refresh()
+  },
+  deactivated() {
+      this.saveY = this.$refs.scroll.getScrollY()
+  },
+  created() {
       //请求成功之后将数据进行一定的操作
       this.getHomeMultidata();
       //生命周期函数有作用域，所以要将局部变量换到林外的地方存起来
       this.getHomeGoods('pop');
       this.getHomeGoods('new');
-      this.getHomeGoods('sell')
+      this.getHomeGoods('sell');
+    },
+    mounted() {
+
+      const refresh = debounce( this.$refs.scroll.refresh, 50)
+      //监听item中图片加载完成
+      this.$bus.$on('itemImageLoad',() => {
+        refresh()
+      })
+
     },
     methods: {
       //@
@@ -91,18 +126,29 @@
             this.currentType = 'sell'
             break;
         }
+        this.$refs.tabControl1.currentIndex = index;
+        this.$refs.tabControl2.currentIndex = index;
       },
       backClick() {
         this.$refs.scroll.scrollTo(0,0)
       },
       contentScroll(position) {
         // console.log(position)
+        //决定backtop是否显示
+
         this.isShowBackTop = (-position.y) > 1000
+        //决定tabcontrol是否吸顶
+        this.isTabFixed = (-position.y) > this.tabOffsetTop
       },
       loadMore(){
-        console.log('我是一个小宝贝嘻嘻嘻');
+        // console.log('我是一个小宝贝嘻嘻嘻');
         this.getHomeGoods(this.currentType)
       },
+      swiperImageLoad() {
+        //获取tabControl的offsetTop
+        this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
+      },
+
       //net
       getHomeMultidata() {
         getHomeMultidata().then(res => {
@@ -116,8 +162,10 @@
         getHomeGoods(type,page).then(res => {
           this.goods[type].list.push(...res.data.list)
           this.goods[type].page += 1
+
+          this.$refs.scroll.finishPullUp();
         });
-        this.$refs.scroll.finishPullUp();
+
       }
     }
   }
@@ -127,23 +175,18 @@
   #home{
     /*100%视口高度*/
     height: 100vh;
-    padding-top: 44px;
     position: relative;
   }
 
   .home-nav{
     color: white;
     background-color: var(--color-tint) ;
-    position: fixed;
+/*    position: fixed;
     left: 0;
     right: 0;
     top: 0;
-    z-index: 999;
-  }
-  .tab-contrl{
-    /*position: sticky;*/
-    top: 44px;
-    z-index: 9;
+     z-index: 999;*/
+
   }
   .content{
    position: absolute;
@@ -156,5 +199,12 @@
   /*   overflow: hidden;*/
   /*   margin-top: 44px;*/
   /* }*/
-
+  .tab-contrl{
+/*    position: fixed;
+    left: 0;
+    top: 44px;
+    right: 0;*/
+    position: relative;
+    z-index: 9;
+  }
 </style>
