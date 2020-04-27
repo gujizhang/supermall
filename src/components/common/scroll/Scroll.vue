@@ -38,12 +38,10 @@
           this.$emit('scroll',position)
         });
       }
-      // console.log(this.scroll);
 
 
       if (this.pullUpLoad){
         this.scroll.on('pullingUp',() =>{
-          // console.log('拉拉我嘤嘤嘤');
           this.$emit('pullingUp')
         })
       }
@@ -56,7 +54,7 @@
         this.scroll && this.scroll.finishPullUp && this.scroll.finishPullUp();
       },
       refresh() {
-        // console.log('---------');
+       //  console.log('---------');
         this.scroll && this.scroll.refresh && this.scroll.refresh();
       },
       getScrollY() {

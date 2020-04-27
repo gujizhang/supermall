@@ -49,8 +49,8 @@
 
 //导入的函数数据以及方法
   import { getHomeMultidata, getHomeGoods} from "network/home";
-  import {debounce} from "components/utils";
-
+/*  import {debounce} from "common/utils";*/
+  import {itemImageListener} from "common/mixin";
 
 
 export default {
@@ -66,6 +66,7 @@ export default {
       Scroll,
       BackTop
     },
+  mixins: [itemImageListener],
     data() {
       //为了存储请求过来的数据创建的数组
       return {
@@ -93,7 +94,9 @@ export default {
     this.$refs.scroll.refresh()
   },
   deactivated() {
-      this.saveY = this.$refs.scroll.getScrollY()
+      //保存y
+      this.saveY = this.$refs.scroll.getScrollY();
+      this.$bus.$off('itemImageLoad',itemImageListener)
   },
   created() {
       //请求成功之后将数据进行一定的操作
@@ -105,11 +108,14 @@ export default {
     },
     mounted() {
 
+/*
       const refresh = debounce( this.$refs.scroll.refresh, 50)
       //监听item中图片加载完成
       this.$bus.$on('itemImageLoad',() => {
         refresh()
-      })
+      }
+      )
+*/
 
     },
     methods: {

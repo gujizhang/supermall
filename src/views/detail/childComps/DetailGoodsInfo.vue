@@ -29,7 +29,7 @@
     },
     methods: {
 	    imgLoad() {
-	      // this.counter++
+        // this.counter++
         // if (this.counter === this.imagesLength)
           if (++this.counter === this.imagesLength) {
 	        this.$emit('imageLoad')
